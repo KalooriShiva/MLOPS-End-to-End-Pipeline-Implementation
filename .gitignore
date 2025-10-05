@@ -1,0 +1,7 @@
+credentials.txt
+*.env
+.env*
+config/credentials/
+secrets/
+*.key
+*.pem

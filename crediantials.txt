@@ -1,5 +1,0 @@
-kaloorishivaprasad_db_user
-Gm72jAcASjHTiICp
-
-
-mongodb+srv://kaloorishivaprasad_db_user:<db_password>@cluster0.vjdrl3n.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
