@@ -103,7 +103,7 @@ class DataTransformation:
             df = df.drop(drop_col, axis=1)
         return df
 
-    def initiate_data_transformation(self) -> DataTransformationArtifact:
+    def initiate_data_transformation(self,) -> DataTransformationArtifact:
         """
         Initiates the data transformation component for the pipeline.
         """
@@ -160,7 +160,13 @@ class DataTransformation:
             test_arr = np.c_[input_feature_test_final, np.array(target_feature_test_final)]
             logging.info("feature-target concatenation done for train-test df.")
 
-            save_object(self.data_transformation_config.transformed_object_file_path, preprocessor)
+            logging.info("Saving preprocessing object.")
+            # Save the preprocessor to the static local path
+            save_object(
+                file_path=self.data_transformation_config.transformed_object_file_path,
+                obj=preprocessor
+            )
+
             save_numpy_array_data(self.data_transformation_config.transformed_train_file_path, array=train_arr)
             save_numpy_array_data(self.data_transformation_config.transformed_test_file_path, array=test_arr)
             logging.info("Saving transformation object and transformed files.")

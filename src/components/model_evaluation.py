@@ -7,8 +7,8 @@ from src.logger import logging
 from src.utils.main_utils import load_object
 import sys
 import pandas as pd
+import os
 from typing import Optional
-from src.entity.s3_estimator import Proj1Estimator
 from dataclasses import dataclass
 
 @dataclass
@@ -30,25 +30,28 @@ class ModelEvaluation:
         except Exception as e:
             raise MyException(e, sys) from e
 
-    def get_best_model(self) -> Optional[Proj1Estimator]:
+    def get_best_model(self) -> Optional[object]:
         """
         Method Name :   get_best_model
-        Description :   This function is used to get model from production stage.
+        Description :   This function is used to get the best model from the local artifact directory.
         
-        Output      :   Returns model object if available in s3 storage
-        On Failure  :   Write an exception log and then raise an exception
+        Output      :   Returns a loaded model object if available, otherwise None.
+        On Failure  :   Write an exception log and then raise an exception.
         """
         try:
-            bucket_name = self.model_eval_config.bucket_name
-            model_path=self.model_eval_config.s3_model_key_path
-            proj1_estimator = Proj1Estimator(bucket_name=bucket_name,
-                                               model_path=model_path)
-
-            if proj1_estimator.is_model_present(model_path=model_path):
-                return proj1_estimator
-            return None
+            model_path = self.model_eval_config.model_path
+            
+            # Check if the model file exists locally
+            if not os.path.exists(model_path):
+                logging.info("No existing model found in local artifacts. This must be the first run.")
+                return None
+            
+            # Load the model from the local file
+            best_model = load_object(file_path=model_path)
+            logging.info("Successfully loaded existing model from local artifacts.")
+            return best_model
         except Exception as e:
-            raise  MyException(e,sys)
+            raise MyException(e, sys)
         
     def _map_gender_column(self, df):
         """Map Gender column to 0 for Female and 1 for Male."""
@@ -84,11 +87,11 @@ class ModelEvaluation:
     def evaluate_model(self) -> EvaluateModelResponse:
         """
         Method Name :   evaluate_model
-        Description :   This function is used to evaluate trained model 
-                        with production model and choose best model 
+        Description :   This function evaluates the newly trained model against the
+                        existing model from the local artifacts directory.
         
-        Output      :   Returns bool value based on validation results
-        On Failure  :   Write an exception log and then raise an exception
+        Output      :   Returns an EvaluateModelResponse object with comparison results.
+        On Failure  :   Write an exception log and then raise an exception.
         """
         try:
             test_df = pd.read_csv(self.data_ingestion_artifact.test_file_path)
@@ -101,15 +104,14 @@ class ModelEvaluation:
             x = self._create_dummy_columns(x)
             x = self._rename_columns(x)
 
-            trained_model = load_object(file_path=self.model_trainer_artifact.trained_model_file_path)
-            logging.info("Trained model loaded/exists.")
             trained_model_f1_score = self.model_trainer_artifact.metric_artifact.f1_score
-            logging.info(f"F1_Score for this model: {trained_model_f1_score}")
+            logging.info(f"F1_Score for the newly trained model: {trained_model_f1_score}")
 
-            best_model_f1_score=None
-            best_model = self.get_best_model()
+            best_model_f1_score = None
+            best_model = self.get_best_model() # This now gets the model from the local file system
+
             if best_model is not None:
-                logging.info(f"Computing F1_Score for production model..")
+                logging.info(f"Computing F1_Score for the existing production model...")
                 y_hat_best_model = best_model.predict(x)
                 best_model_f1_score = f1_score(y, y_hat_best_model)
                 logging.info(f"F1_Score-Production Model: {best_model_f1_score}, F1_Score-New Trained Model: {trained_model_f1_score}")
@@ -129,20 +131,17 @@ class ModelEvaluation:
     def initiate_model_evaluation(self) -> ModelEvaluationArtifact:
         """
         Method Name :   initiate_model_evaluation
-        Description :   This function is used to initiate all steps of the model evaluation
+        Description :   This function initiates all steps of the model evaluation.
         
-        Output      :   Returns model evaluation artifact
-        On Failure  :   Write an exception log and then raise an exception
+        Output      :   Returns a model evaluation artifact.
+        On Failure  :   Write an exception log and then raise an exception.
         """  
         try:
-            print("------------------------------------------------------------------------------------------------")
             logging.info("Initialized Model Evaluation Component.")
             evaluate_model_response = self.evaluate_model()
-            s3_model_path = self.model_eval_config.s3_model_key_path
 
             model_evaluation_artifact = ModelEvaluationArtifact(
                 is_model_accepted=evaluate_model_response.is_model_accepted,
-                s3_model_path=s3_model_path,
                 trained_model_path=self.model_trainer_artifact.trained_model_file_path,
                 changed_accuracy=evaluate_model_response.difference)
 

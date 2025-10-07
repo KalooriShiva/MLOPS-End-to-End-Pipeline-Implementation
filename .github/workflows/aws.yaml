@@ -1,57 +1,59 @@
-name: Deploy Application Docker Image to EC2 instance
+name: CI/CD for Vehicle Insurance App
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-  Continuous-Integration:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
-          IMAGE_TAG: latest
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .  
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-
-  Continuous-Deployment:
-    needs: Continuous-Integration
+  # --- Continuous Integration (CI) Job ---
+  # This job is responsible for building and testing the application.
+  build:
     runs-on: self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Run Docker Image to serve users
+      - name: Build Docker image
         run: |
-         docker run -d -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" -e MONGODB_URL="${{ secrets.MONGODB_URL }}" -p 5000:5000 "${{ steps.login-ecr.outputs.registry }}"/"${{ secrets.ECR_REPO }}":latest
+          docker build -t vehicle-insurance-app:latest .
+
+      # In a real-world scenario, you would add a step here to run tests.
+      # For example: docker run vehicle-insurance-app:latest pytest
+
+      - name: Save Docker image for deployment
+        run: |
+          docker save -o image.tar vehicle-insurance-app:latest
+      
+      - name: Upload Docker image as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image
+          path: image.tar
+
+  # --- Continuous Deployment (CD) Job ---
+  # This job deploys the application if the CI job was successful.
+  deploy:
+    # This job depends on the 'build' job and will only run if it succeeds.
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-image
+
+      - name: Load Docker image
+        run: |
+          docker load -i image.tar
+
+      - name: Stop and Remove Existing Container
+        run: |
+          docker stop vehicle-insurance-container || true
+          docker rm vehicle-insurance-container || true
+      
+      - name: Run Docker Container
+        run: |
+         docker run -d --name vehicle-insurance-container -e MONGODB_URL="${{ secrets.MONGODB_URL }}" -p 5000:5000 vehicle-insurance-app:latest

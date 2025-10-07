@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 
 from src.exception import MyException
 from src.logger import logging
-from src.utils.main_utils import load_numpy_array_data, load_object, save_object
+from src.utils.main_utils import load_numpy_array_data, save_object, load_object
 from src.entity.config_entity import ModelTrainerConfig
 from src.entity.artifact_entity import DataTransformationArtifact, ModelTrainerArtifact, ClassificationMetricArtifact
 from src.entity.estimator import MyModel
@@ -66,15 +66,7 @@ class ModelTrainer:
         except Exception as e:
             raise MyException(e, sys) from e
 
-    def initiate_model_trainer(self) -> ModelTrainerArtifact:
-        logging.info("Entered initiate_model_trainer method of ModelTrainer class")
-        """
-        Method Name :   initiate_model_trainer
-        Description :   This function initiates the model training steps
-        
-        Output      :   Returns model trainer artifact
-        On Failure  :   Write an exception log and then raise an exception
-        """
+    def initiate_model_trainer(self,) -> ModelTrainerArtifact:
         try:
             print("------------------------------------------------------------------------------------------------")
             print("Starting Model Trainer Component")
@@ -96,11 +88,19 @@ class ModelTrainer:
                 logging.info("No model found with score above the base score")
                 raise Exception("No model found with score above the base score")
 
-            # Save the final model object that includes both preprocessing and the trained model
-            logging.info("Saving new model as performace is better than previous one.")
-            my_model = MyModel(preprocessing_object=preprocessing_obj, trained_model_object=trained_model)
-            save_object(self.model_trainer_config.trained_model_file_path, my_model)
-            logging.info("Saved final model object that includes both preprocessing and the trained model")
+            logging.info(f"Best model found on training dataset.")
+
+            logging.info(f"Saving model object")
+            save_object(self.model_trainer_config.trained_model_file_path, trained_model)
+
+            # We are removing the S3 upload logic
+            # logging.info(f"Saving model to s3 bucket")
+            # proj1_estimator = Proj1Estimator(
+            #     model_path=self.model_trainer_config.trained_model_file_path,
+            #     bucket_name=self.model_trainer_config.bucket_name,
+            #     object_name=self.model_trainer_config.object_name
+            # )
+            # proj1_estimator.upload_model_to_s3()
 
             # Create and return the ModelTrainerArtifact
             model_trainer_artifact = ModelTrainerArtifact(

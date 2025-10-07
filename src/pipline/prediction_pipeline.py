@@ -1,9 +1,11 @@
 import sys
 from src.entity.config_entity import VehiclePredictorConfig
-from src.entity.s3_estimator import Proj1Estimator
+# The S3 estimator is no longer needed
+# from src.entity.s3_estimator import Proj1Estimator
 from src.exception import MyException
 from src.logger import logging
 from pandas import DataFrame
+from src.utils.main_utils import load_object
 
 
 class VehicleData:
@@ -82,29 +84,41 @@ class VehicleData:
             raise MyException(e, sys) from e
 
 class VehicleDataClassifier:
-    def __init__(self,prediction_pipeline_config: VehiclePredictorConfig = VehiclePredictorConfig(),) -> None:
+    def __init__(self, prediction_pipeline_config: VehiclePredictorConfig = VehiclePredictorConfig()) -> None:
         """
-        :param prediction_pipeline_config: Configuration for prediction the value
+        :param prediction_pipeline_config: Configuration for prediction
         """
         try:
             self.prediction_pipeline_config = prediction_pipeline_config
         except Exception as e:
-            raise MyException(e, sys)
+            raise MyException(e, sys) from e
 
-    def predict(self, dataframe) -> str:
+    def predict(self, dataframe: DataFrame) -> str:
         """
-        This is the method of VehicleDataClassifier
-        Returns: Prediction in string format
+        This method takes a dataframe, loads the preprocessor and model from local files,
+        transforms the data, and returns the model's prediction.
         """
         try:
-            logging.info("Entered predict method of VehicleDataClassifier class")
-            model = Proj1Estimator(
-                bucket_name=self.prediction_pipeline_config.model_bucket_name,
-                model_path=self.prediction_pipeline_config.model_file_path,
-            )
-            result =  model.predict(dataframe)
+            logging.info("Starting prediction...")
             
-            return result
-        
+            # Get paths to the local preprocessor and model files from the config
+            preprocessor_path = self.prediction_pipeline_config.preprocessor_path
+            model_path = self.prediction_pipeline_config.model_file_path
+
+            # Load the preprocessor and model objects from local files
+            logging.info(f"Loading preprocessor from: {preprocessor_path}")
+            preprocessor = load_object(file_path=preprocessor_path)
+            
+            logging.info(f"Loading model from: {model_path}")
+            model = load_object(file_path=model_path)
+
+            # Use the loaded preprocessor to transform the input dataframe
+            transformed_dataframe = preprocessor.transform(dataframe)
+            
+            # Predict using the loaded model on the transformed data
+            prediction = model.predict(transformed_dataframe)
+            
+            return prediction
+
         except Exception as e:
-            raise MyException(e, sys)
+            raise MyException(e, sys) from e
