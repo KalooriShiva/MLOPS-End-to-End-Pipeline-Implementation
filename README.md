@@ -10,7 +10,7 @@ This project implements a complete end-to-end MLOps pipeline for a machine learn
 -   **Data Transformation**: Preprocesses data, handles categorical features, and prepares it for modeling.
 -   **Model Training**: Trains a classification model to predict claim approvals.
 -   **Model Evaluation**: Compares the newly trained model with the production model to ensure performance improvement.
--   **Model Pusher**: Pushes the best model to an AWS S3 bucket for production use.
+-   **Model Pusher**: Saves the best model locally for production use.
 -   **Prediction Pipeline**: Serves the trained model for real-time predictions.
 -   **Web Application**: A user-friendly interface built with Streamlit to interact with the model.
 -   **Dockerized**: The application is containerized using Docker for easy deployment.
@@ -28,7 +28,6 @@ This project implements a complete end-to-end MLOps pipeline for a machine learn
 │   ├── pipline/            # Pipeline orchestration (training and prediction)
 │   ├── entity/             # Configuration and artifact entity classes
 │   ├── data_access/        # Scripts for accessing data (e.g., from MongoDB)
-│   ├── cloud_storage/      # Modules for interacting with AWS S3
 │   └── utils/              # Utility functions
 ├── app.py                  # Streamlit application for prediction
 ├── demo.py                 # Script to run the training pipeline
@@ -42,7 +41,7 @@ This project implements a complete end-to-end MLOps pipeline for a machine learn
 -   **Programming Language**: Python 3.10
 -   **ML/Data Science**: Scikit-learn, Pandas, NumPy
 -   **Data Storage**: MongoDB
--   **Model Registry**: AWS S3
+-   **Model Storage**: Local File System
 -   **Web Framework**: Streamlit
 -   **Containerization**: Docker
 
@@ -66,11 +65,9 @@ This project implements a complete end-to-end MLOps pipeline for a machine learn
     ```
 
 4.  **Set up Environment Variables:**
-    You will need to configure credentials for MongoDB and AWS. Create a `.env` file in the root directory and add the following:
+    You will need to configure credentials for MongoDB. Create a `.env` file in the root directory and add the following:
     ```
     MONGODB_URL="<your_mongodb_connection_string>"
-    AWS_ACCESS_KEY_ID="<your_aws_access_key>"
-    AWS_SECRET_ACCESS_KEY="<your_aws_secret_key>"
     ```
 
 ## How to Run
