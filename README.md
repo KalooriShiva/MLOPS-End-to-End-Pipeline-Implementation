@@ -126,6 +126,27 @@ A simple web interface is available to interact with the trained model.
 
 ---
 
+## 🔄 CI/CD Setup with Docker and GitHub Actions
+
+This project is configured for Continuous Integration and Continuous Deployment (CI/CD) using Docker for containerization and GitHub Actions for automation.
+
+### Step 11: Docker Setup
+1.  Create a `Dockerfile` to define the application environment and dependencies.
+2.  Create a `.dockerignore` file to exclude unnecessary files from the Docker image, keeping it lightweight.
+
+### Step 12: GitHub Actions Workflow
+1.  **Create a workflow file** inside the `.github/workflows/` directory (e.g., `main.yml`). This file defines the CI/CD pipeline steps.
+2.  **Set up GitHub Secrets**: To allow GitHub Actions to securely log in to services, store sensitive credentials as encrypted secrets in your repository settings. For a typical Docker workflow, you would add:
+    *   `DOCKER_USERNAME`: Your Docker Hub username.
+    *   `DOCKER_PASSWORD`: Your Docker Hub password or access token.
+3.  **Define Workflow Jobs**: The workflow is set up to:
+    *   Check out the code from the repository.
+    *   Build the Docker image from the `Dockerfile`.
+    *   Log in to Docker Hub using the stored secrets.
+    *   Push the newly built image to your Docker Hub repository.
+
+---
+
 ## 🎯 Project Workflow Summary
 
 1.  **Data Ingestion** (from MongoDB) ➔ **Data Validation** ➔ **Data Transformation**
