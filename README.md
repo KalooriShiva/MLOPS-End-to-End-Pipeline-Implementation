@@ -1,97 +1,140 @@
-# End-to-End MLOps Pipeline for Vehicle Insurance Claim Prediction
+# MLOps Project - Vehicle Insurance Claim Prediction
 
-This project implements a complete end-to-end MLOps pipeline for a machine learning model that predicts vehicle insurance claims. The pipeline covers everything from data ingestion and validation to model training, evaluation, and deployment via a web application.
+Welcome to this MLOps project, which demonstrates a robust, end-to-end pipeline for a vehicle insurance claim prediction task. This project showcases data ingestion from MongoDB, automated model training, and a simple web interface for predictions. The goal is to provide a clear example of building and managing a machine learning pipeline for real-world applications.
 
-## Features
+---
 
--   **Automated Training Pipeline**: Orchestrates all steps from data extraction to model registration.
--   **Data Ingestion**: Fetches data from a MongoDB database.
--   **Data Validation**: Ensures data quality and schema integrity.
--   **Data Transformation**: Preprocesses data, handles categorical features, and prepares it for modeling.
--   **Model Training**: Trains a classification model to predict claim approvals.
--   **Model Evaluation**: Compares the newly trained model with the production model to ensure performance improvement.
--   **Model Pusher**: Saves the best model locally for production use.
--   **Prediction Pipeline**: Serves the trained model for real-time predictions.
--   **Web Application**: A user-friendly interface built with Streamlit to interact with the model.
--   **Dockerized**: The application is containerized using Docker for easy deployment.
--   **CI/CD**: Includes setup for continuous integration and deployment (structure available in `.github/workflows`).
+## 📁 Project Setup and Structure
 
-## Project Structure
+### Step 1: Project Template
+- Start by executing the `template.py` file to create the initial project template, which includes the required folder structure and placeholder files.
 
+### Step 2: Package Management
+- Write the setup for importing local packages in `setup.py`.
+
+### Step 3: Virtual Environment and Dependencies
+- Create a virtual environment and install required dependencies from `requirements.txt`:
+  ```bash
+  conda create -n vehicle python=3.10 -y
+  conda activate vehicle
+  pip install -r requirements.txt
+  ```
+- Verify the local packages by running:
+  ```bash
+  pip list
+  ```
+
+### Project Structure
 ```
-├── artifacts/              # Stores output artifacts from the pipeline (models, datasets, etc.)
-├── config/                 # Configuration files (schema.yaml, model.yaml)
-├── logs/                   # Log files for monitoring and debugging
-├── notebooks/              # Jupyter notebooks for experimentation
-├── src/                    # Source code for the MLOps pipeline
-│   ├── components/         # Individual pipeline components (data ingestion, training, etc.)
-│   ├── pipline/            # Pipeline orchestration (training and prediction)
-│   ├── entity/             # Configuration and artifact entity classes
-│   ├── data_access/        # Scripts for accessing data (e.g., from MongoDB)
-│   └── utils/              # Utility functions
-├── app.py                  # Streamlit application for prediction
-├── demo.py                 # Script to run the training pipeline
-├── Dockerfile              # Docker configuration for the application
-├── requirements.txt        # Python dependencies
-└── setup.py                # Setup script for installing the project as a package
-```
-
-## Technology Stack
-
--   **Programming Language**: Python 3.10
--   **ML/Data Science**: Scikit-learn, Pandas, NumPy
--   **Data Storage**: MongoDB
--   **Model Storage**: Local File System
--   **Web Framework**: Streamlit
--   **Containerization**: Docker
-
-## Setup and Installation
-
-1.  **Clone the repository:**
-    ```sh
-    git clone <repository-url>
-    cd MLOPS-End-to-End-Pipeline-Implementation
-    ```
-
-2.  **Create and activate a virtual environment:**
-    ```sh
-    conda create -n proj1 python=3.10 -y
-    conda activate proj1
-    ```
-
-3.  **Install the dependencies:**
-    ```sh
-    pip install -r requirements.txt
-    ```
-
-4.  **Set up Environment Variables:**
-    You will need to configure credentials for MongoDB. Create a `.env` file in the root directory and add the following:
-    ```
-    MONGODB_URL="<your_mongodb_connection_string>"
-    ```
-
-## How to Run
-
-### 1. Run the Training Pipeline
-
-To execute the entire training pipeline, run the `demo.py` script:
-
-```sh
-python demo.py
+.
+├── .github/workflows/         # GitHub Actions CI/CD (if applicable)
+├── notebooks/                 # Jupyter notebooks for EDA and experiments
+│   └── mongoDB_demo.ipynb
+├── src/                       # Source code for the project
+│   ├── __init__.py
+│   ├── components/            # Core pipeline components
+│   │   ├── __init__.py
+│   │   ├── data_ingestion.py
+│   │   ├── data_transformation.py
+│   │   ├── data_validation.py
+│   │   └── model_trainer.py
+│   ├── config/                # Configuration files
+│   │   └── schema.yaml
+│   ├── constants/             # Project constants
+│   ├── entity/                # Entity definitions (configs, artifacts)
+│   │   ├── __init__.py
+│   │   ├── artifact_entity.py
+│   │   └── config_entity.py
+│   ├── exception/             # Custom exception handling
+│   ├── logger/                # Logging setup
+│   ├── pipeline/              # Pipeline orchestration
+│   │   ├── __init__.py
+│   │   ├── prediction_pipeline.py
+│   │   └── training_pipeline.py
+│   └── utils/                 # Utility functions
+│       └── main_utils.py
+├── app.py                     # Main application file (Streamlit)
+├── demo.py                    # Script to run the training pipeline
+├── requirements.txt           # Project dependencies
+├── setup.py                   # Setup script for the project package
+└── README.md                  # Project documentation
 ```
 
-This will trigger the data ingestion, validation, transformation, model training, evaluation, and model pusher stages. The resulting artifacts will be stored in the `artifacts/` directory.
+---
 
-### 2. Run the Prediction Web App
+## 📊 MongoDB Setup and Data Management
 
-To start the Streamlit application for making predictions:
+### Step 4: MongoDB Atlas Configuration
+1. Sign up for [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) and create a new project.
+2. Set up a free M0 cluster, configure the username and password, and allow access from any IP address (`0.0.0.0/0`).
+3. Retrieve the MongoDB connection string for Python and save it (replace `<password>` with your password).
 
-```sh
-streamlit run app.py
-```
+### Step 5: Pushing Data to MongoDB
+1. Create a folder named `notebook`, add the dataset, and create a notebook file `mongoDB_demo.ipynb`.
+2. Use the notebook to push data to the MongoDB database.
+3. Verify the data in MongoDB Atlas under Database > Browse Collections.
 
-Navigate to `http://localhost:8501` in your browser to use the application. You can input vehicle and customer data to get a claim prediction. The app also provides an option to trigger the training pipeline directly from the UI.
+---
 
-## License
+## 📝 Logging, Exception Handling, and EDA
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+### Step 6: Set Up Logging and Exception Handling
+- Create logging and exception handling modules. Test them on a demo file `demo.py`.
+
+### Step 7: Exploratory Data Analysis (EDA)
+- Analyze and engineer features in a notebook for further processing in the pipeline.
+
+---
+
+## ⚙️ ML Pipeline Execution
+
+The core of this project is an automated pipeline that handles everything from data ingestion to model training.
+
+### Step 8: Configure Environment Variables
+- The pipeline requires the MongoDB connection string. Set it as an environment variable:
+  ```bash
+  # For Bash/Zsh
+  export MONGODB_URL="mongodb+srv://<username>:<password>...."
+  
+  # For Windows Powershell
+  $env:MONGODB_URL = "mongodb+srv://<username>:<password>...."
+  ```
+
+### Step 9: Run the Training Pipeline
+- Execute the main script to run the entire pipeline:
+  ```bash
+  python demo.py
+  ```
+- This will trigger the following components sequentially:
+    1.  **Data Ingestion**: Fetches data from your MongoDB collection.
+    2.  **Data Validation**: Validates data against a predefined schema.
+    3.  **Data Transformation**: Preprocesses the data and prepares it for training.
+    4.  **Model Training**: Trains a machine learning model and saves the artifact.
+
+---
+
+## 🚀 Prediction with Streamlit UI
+
+A simple web interface is available to interact with the trained model.
+
+### Step 10: Run the Application
+- Once the training pipeline has successfully generated a model, start the Streamlit application:
+  ```bash
+  streamlit run app.py
+  ```
+- Open your browser and navigate to the local URL provided to make predictions.
+
+---
+
+## 🎯 Project Workflow Summary
+
+1.  **Data Ingestion** (from MongoDB) ➔ **Data Validation** ➔ **Data Transformation**
+2.  **Model Training** ➔ **Model Artifact Saved**
+3.  **Prediction** (via Streamlit UI)
+
+---
+
+## 💬 Connect
+If you found this project helpful or have any questions, feel free to reach out!
+
+Contact: kaloorishivaprasad@gmail.com
