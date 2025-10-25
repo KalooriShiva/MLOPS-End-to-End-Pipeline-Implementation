@@ -46,7 +46,8 @@ class DataTransformationConfig:
 class ModelTrainerConfig:
     model_trainer_dir: str = os.path.join(training_pipeline_config.artifact_dir, MODEL_TRAINER_DIR_NAME)
     # The training pipeline will save the final model here
-    trained_model_file_path: str = os.path.join(ARTIFACTS_DIR, "model.pkl")
+    trained_model_file_path: str = os.path.join(model_trainer_dir, "model.pkl")
+    best_model_path_trainer = os.path.join(ARTIFACTS_DIR, "model.pkl")
     expected_accuracy: float = MODEL_TRAINER_EXPECTED_SCORE
     model_config_file_path: str = MODEL_TRAINER_MODEL_CONFIG_FILE_PATH
     _n_estimators = MODEL_TRAINER_N_ESTIMATORS
@@ -58,11 +59,12 @@ class ModelTrainerConfig:
 
 @dataclass
 class ModelEvaluationConfig:
-    # The path to the currently deployed "best" model
-    model_path: str = os.path.join(ARTIFACTS_DIR, "model.pkl")
-    # We no longer need S3 configurations
-    # bucket_name: str = BUCKET_NAME
-    # s3_model_key_path: str = os.path.join(MODEL_DIR, LATEST, MODEL_FILE_NAME)
+    change_threshold: float = 0.02
+    best_model_path: str = os.path.join("artifacts", "model", "model.pkl")
+    # Add metrics saving paths
+    model_evaluation_dir: str = os.path.join(training_pipeline_config.artifact_dir, "model_evaluation")
+    metrics_file_path: str = os.path.join(model_evaluation_dir, "metrics.json")
+    evaluation_report_file_path: str = os.path.join(model_evaluation_dir, "evaluation_report.yaml")
 
 @dataclass
 class ModelPusherConfig:

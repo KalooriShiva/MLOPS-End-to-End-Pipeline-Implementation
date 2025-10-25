@@ -1,10 +1,10 @@
 import sys
 from typing import Tuple
-
+import os
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-
+from typing import Optional
 from src.exception import MyException
 from src.logger import logging
 from src.utils.main_utils import load_numpy_array_data, save_object, load_object
@@ -65,6 +65,28 @@ class ModelTrainer:
         
         except Exception as e:
             raise MyException(e, sys) from e
+    def get_best_model(self) -> Optional[object]:
+        """
+        Method Name :   get_best_model
+        Description :   This function is used to get the best model from the local artifact directory.
+        
+        Output      :   Returns a loaded model object if available, otherwise None.
+        On Failure  :   Write an exception log and then raise an exception.
+        """
+        try:
+            model_path = self.model_trainer_config.best_model_path_trainer
+            
+            # Check if the model file exists locally
+            if not os.path.exists(model_path):
+                logging.info("No existing model found in local artifacts. This must be the first run.")
+                return None
+            
+            # Load the model from the local file
+            best_model = load_object(file_path=model_path)
+            logging.info("Successfully loaded existing model from local artifacts.")
+            return best_model
+        except Exception as e:
+            raise MyException(e, sys)
 
     def initiate_model_trainer(self,) -> ModelTrainerArtifact:
         try:
@@ -92,6 +114,9 @@ class ModelTrainer:
 
             logging.info(f"Saving model object")
             save_object(self.model_trainer_config.trained_model_file_path, trained_model)
+            best_model = self.get_best_model()
+            if best_model is None:
+                save_object(self.model_trainer_config.best_model_path_trainer, trained_model)
 
             # We are removing the S3 upload logic
             # logging.info(f"Saving model to s3 bucket")

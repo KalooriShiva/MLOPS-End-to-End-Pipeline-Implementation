@@ -10,6 +10,9 @@ import pandas as pd
 import os
 from typing import Optional
 from dataclasses import dataclass
+import json
+import yaml
+from datetime import datetime
 
 @dataclass
 class EvaluateModelResponse:
@@ -39,15 +42,15 @@ class ModelEvaluation:
         On Failure  :   Write an exception log and then raise an exception.
         """
         try:
-            model_path = self.model_eval_config.model_path
+            best_model_path = self.model_eval_config.best_model_path
             
             # Check if the model file exists locally
-            if not os.path.exists(model_path):
+            if not os.path.exists(best_model_path):
                 logging.info("No existing model found in local artifacts. This must be the first run.")
                 return None
             
             # Load the model from the local file
-            best_model = load_object(file_path=model_path)
+            best_model = load_object(file_path=best_model_path)
             logging.info("Successfully loaded existing model from local artifacts.")
             return best_model
         except Exception as e:
@@ -83,6 +86,7 @@ class ModelEvaluation:
         if "_id" in df.columns:
             df = df.drop("_id", axis=1)
         return df
+    
 
     def evaluate_model(self) -> EvaluateModelResponse:
         """
@@ -122,6 +126,10 @@ class ModelEvaluation:
                                            is_model_accepted=trained_model_f1_score > tmp_best_model_score,
                                            difference=trained_model_f1_score - tmp_best_model_score
                                            )
+            
+            # SAVE METRICS HERE
+            self.save_evaluation_metrics(result)
+            
             logging.info(f"Result: {result}")
             return result
 
@@ -143,9 +151,62 @@ class ModelEvaluation:
             model_evaluation_artifact = ModelEvaluationArtifact(
                 is_model_accepted=evaluate_model_response.is_model_accepted,
                 trained_model_path=self.model_trainer_artifact.trained_model_file_path,
-                changed_accuracy=evaluate_model_response.difference)
-
+                changed_accuracy=evaluate_model_response.difference,
+                # Add metrics paths
+                evaluation_report_file_path=self.model_eval_config.evaluation_report_file_path,
+                metrics_file_path=self.model_eval_config.metrics_file_path,
+                trained_model_f1_score=evaluate_model_response.trained_model_f1_score,
+                best_model_f1_score=evaluate_model_response.best_model_f1_score
+            )
+            
             logging.info(f"Model evaluation artifact: {model_evaluation_artifact}")
             return model_evaluation_artifact
         except Exception as e:
             raise MyException(e, sys) from e
+
+    def save_evaluation_metrics(self, evaluation_response: EvaluateModelResponse) -> None:
+        """Save detailed evaluation metrics to artifacts"""
+        try:
+            # Create evaluation directory
+            os.makedirs(os.path.dirname(self.model_eval_config.metrics_file_path), exist_ok=True)
+            
+            # Prepare metrics data
+            metrics_data = {
+                "evaluation_timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "trained_model_f1_score": float(evaluation_response.trained_model_f1_score),
+                "best_model_f1_score": float(evaluation_response.best_model_f1_score) if evaluation_response.best_model_f1_score else None,
+                "performance_improvement": float(evaluation_response.difference),
+                "is_model_accepted": evaluation_response.is_model_accepted,
+                "change_threshold": self.model_eval_config.change_threshold,
+                "trained_model_path": self.model_trainer_artifact.trained_model_file_path,
+                "best_model_path": self.model_eval_config.best_model_path
+            }
+            
+            # Save as JSON
+            with open(self.model_eval_config.metrics_file_path, 'w') as f:
+                json.dump(metrics_data, f, indent=4)
+            
+            # Save summary as YAML
+            summary_data = {
+                "model_evaluation_summary": {
+                    "evaluation_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "model_acceptance": {
+                        "accepted": evaluation_response.is_model_accepted,
+                        "improvement": float(evaluation_response.difference),
+                        "threshold": self.model_eval_config.change_threshold
+                    },
+                    "performance_metrics": {
+                        "new_model_f1": float(evaluation_response.trained_model_f1_score),
+                        "current_model_f1": float(evaluation_response.best_model_f1_score) if evaluation_response.best_model_f1_score else "No existing model"
+                    }
+                }
+            }
+            
+            with open(self.model_eval_config.evaluation_report_file_path, 'w') as f:
+                yaml.dump(summary_data, f, default_flow_style=False)
+            
+            logging.info(f"Evaluation metrics saved to: {self.model_eval_config.metrics_file_path}")
+            logging.info(f"Evaluation report saved to: {self.model_eval_config.evaluation_report_file_path}")
+            
+        except Exception as e:
+            raise MyException(e, sys)

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional  # Import Optional for optional type hinting
 
 
 @dataclass
@@ -34,8 +35,11 @@ class ModelEvaluationArtifact:
     is_model_accepted: bool
     trained_model_path: str
     changed_accuracy: float
-    # s3_model_path is no longer needed
-    # s3_model_path: str
+    # Make these optional with default values
+    evaluation_report_file_path: str = None
+    metrics_file_path: str = None
+    trained_model_f1_score: float = 0.0
+    best_model_f1_score: Optional[float] = None
 
 @dataclass
 class ModelPusherArtifact:
