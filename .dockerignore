@@ -1,3 +1,4 @@
+artifacts
 artifact
 venv
 env
@@ -10,3 +11,9 @@ LICENSE
 src.egg.-info
 notebook
 credentials
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
